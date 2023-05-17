@@ -18,3 +18,23 @@ httpd = SocketServer.TCPServer(("", PORT), Handler)
 
 print("Servindo em http://localhost:%s" % PORT)
 httpd.serve_forever()
+
+
+import http.server
+import ssl
+
+class CORSRequestHandler(http.server.SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        http.server.SimpleHTTPRequestHandler.end_headers(self)
+
+PORT = 8000
+
+context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+context.load_cert_chain('server.crt', 'server.key')
+
+httpd = http.server.HTTPServer(("", PORT), CORSRequestHandler)
+httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
+
+print("Servindo em https://localhost:%s" % PORT)
+httpd.serve_forever()
