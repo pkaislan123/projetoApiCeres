@@ -1,4 +1,5 @@
 import requests
+import time
 
 # Função para listar as tarefas e verificar se é necessário fazer o download do áudio
 def listar_tarefas():
@@ -34,5 +35,7 @@ def download_audio(audio_id):
     else:
         print("Erro ao fazer o download do arquivo de áudio")
 
-# Chamar a função para listar as tarefas e verificar o download do áudio
-listar_tarefas()
+# Loop principal para listar as tarefas a cada 30 segundos
+while True:
+    listar_tarefas()
+    time.sleep(30)
