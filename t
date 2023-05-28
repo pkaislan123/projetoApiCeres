@@ -1,40 +1,38 @@
-https://linuxdicasesuporte.blogspot.com/2022/02/equalizador-para-pulseaudio-na-sua.html
+import requests
 
+# Função para listar as tarefas e verificar se é necessário fazer o download do áudio
+def listar_tarefas():
+    url = "http://localhost:8080/v1/protected/modulosonoro/tarefas/123456"
+    response = requests.get(url)
+    if response.status_code == 200:
+        tarefa = response.json()
 
-ffmpeg -i rtsp://teste:TItaniwm2023@192.168.100.151:554/ISAPI/Streaming/channels/101 -c copy -f hls -hls_time 10 -hls_list_size 6 -hls_flags delete_segments -hls_base_url http://localhost:8751/ camera1.m3u8
+        # Verificar se há tarefas não respondidas com tipo_requisicao igual a 0
+        if tarefa["respondido_modulo_sonoro"] == 0 and tarefa["tipo_requisicao"] == 0:
+            audio_id = tarefa["audio"]["id_audio"]
+            download_audio(audio_id)
+        else:
+            print("Não há tarefas pendentes de download de áudio.")
+    else:
+        print("Erro ao obter a lista de tarefas.")
 
-import SimpleHTTPServer
-import SocketServer
+# Função para fazer o download do arquivo de áudio
+def download_audio(audio_id):
+    url = f"http://localhost:8080/v1/protected/modulosonoro/download/{audio_id}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        # Nome do arquivo de áudio
+        nome_arquivo = response.headers.get('Content-Disposition').split('filename=')[1]
+        # Caminho de destino para salvar o arquivo
+        caminho_destino = f"C:/musicasrecebidas/{nome_arquivo}"
+        
+        # Salvar o arquivo no caminho de destino
+        with open(caminho_destino, 'wb') as file:
+            file.write(response.content)
+        
+        print(f"Arquivo de áudio salvo em: {caminho_destino}")
+    else:
+        print("Erro ao fazer o download do arquivo de áudio")
 
-class CORSRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
-    def end_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
-        SimpleHTTPServer.SimpleHTTPRequestHandler.end_headers(self)
-
-PORT = 8000
-
-Handler = CORSRequestHandler
-httpd = SocketServer.TCPServer(("", PORT), Handler)
-
-print("Servindo em http://localhost:%s" % PORT)
-httpd.serve_forever()
-
-
-import http.server
-import ssl
-
-class CORSRequestHandler(http.server.SimpleHTTPRequestHandler):
-    def end_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
-        http.server.SimpleHTTPRequestHandler.end_headers(self)
-
-PORT = 8000
-
-context = ssl.SSLContext(ssl.PROTOCOL_TLS)
-context.load_cert_chain('server.crt', 'server.key')
-
-httpd = http.server.HTTPServer(("", PORT), CORSRequestHandler)
-httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
-
-print("Servindo em https://localhost:%s" % PORT)
-httpd.serve_forever()
+# Chamar a função para listar as tarefas e verificar o download do áudio
+listar_tarefas()
